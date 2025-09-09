@@ -1,0 +1,225 @@
+# ================================
+# PYTHON
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ================================
+# VIRTUAL ENVIRONMENTS
+# ================================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# ================================
+# FLASK
+# ================================
+instance/
+.webassets-cache
+*.db
+*.sqlite
+*.sqlite3
+
+# ================================
+# IMAGENS E ARQUIVOS PROCESSADOS
+# ================================
+Entrada/*
+!Entrada/.gitkeep
+Saida/*
+!Saida/.gitkeep
+
+# ================================
+# LOGS
+# ================================
+logs/
+*.log
+log/
+
+# ================================
+# DOCKER
+# ================================
+.dockerignore
+
+# ================================
+# ENVIRONMENT VARIABLES
+# ================================
+.env.local
+.env.production
+.env.development
+
+# ================================
+# IDE E EDITORES
+# ================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ================================
+# SISTEMA OPERACIONAL
+# ================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ================================
+# TESTES
+# ================================
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+htmlcov/
+.testmondata
+coverage.xml
+*.cover
+.hypothesis/
+
+# ================================
+# JUPYTER NOTEBOOKS
+# ================================
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# ================================
+# DADOS TEMPORÁRIOS
+# ================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+
+# ================================
+# CERTIFICADOS E CHAVES
+# ================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# ================================
+# CACHE
+# ================================
+.cache/
+*.cache
+__cache__/
+
+# ================================
+# ARQUIVOS DE CONFIGURAÇÃO SENSÍVEIS
+# ================================
+config.ini
+secrets.json
+credentials.json
+
+# ================================
+# DOCUMENTAÇÃO GERADA
+# ================================
+docs/_build/
+site/
+doc/_build/
+
+# ================================
+# PROFILING
+# ================================
+*.prof
+*.profile
+
+# ================================
+# MYPY
+# ================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ================================
+# OUTROS
+# ================================
+.vscode/settings.json
+.history/
+*.pid
+*.sock

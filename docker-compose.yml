@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  web_image_processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web_image_processor
+    restart: unless-stopped
+    
+    # Configurações de rede
+    ports:
+      - "${FLASK_PORT:-7000}:7000"
+    
+    # Variáveis de ambiente
+    environment:
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=7000
+      - FLASK_DEBUG=${FLASK_DEBUG:-false}
+      - UPLOAD_FOLDER=/app/Entrada
+      - PROCESSED_FOLDER=/app/Saida
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-16}
+    
+    # Configurações de hardware
+    deploy:
+      resources:
+        limits:
+          # CPU limits (em número de cores)
+          cpus: '${DOCKER_CPU_LIMIT:-2.0}'
+          # Memória limits (formato: 512m, 1g, 2g, etc.)
+          memory: '${DOCKER_MEMORY_LIMIT:-2048}M'
+        reservations:
+          # Recursos reservados (garantidos)
+          cpus: '${DOCKER_CPU_RESERVATION:-1.0}'
+          memory: '${DOCKER_MEMORY_RESERVATION:-1024}M'
+    
+    # Volumes para persistência de dados
+    volumes:
+      - ./Entrada:/app/Entrada
+      - ./Saida:/app/Saida
+      - ./logs:/app/logs
+    
+    # Configurações de saúde
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Configurações de segurança
+    user: "1000:1000"  # Execute com usuário não-root
+    
+    # Configurações de rede interna (opcional)
+    networks:
+      - image_processor_network
+
+  # Serviço opcional: Redis para cache (descomente se necessário)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: redis_image_processor
+  #   restart: unless-stopped
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - image_processor_network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: '256M'
+
+  # Serviço opcional: Nginx como proxy reverso (descomente se necessário)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: nginx_image_processor
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - web_image_processor
+  #   networks:
+  #     - image_processor_network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: '128M'
+
+# Redes
+networks:
+  image_processor_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes nomeados (descomente se usar Redis)
+# volumes:
+#   redis_data:
+
+# ================================
+# CONFIGURAÇÕES OPCIONAIS AVANÇADAS
+# ================================
+
+# Para usar GPU (NVIDIA Container Toolkit necessário):
+# Descomente as linhas abaixo no serviço web_image_processor:
+
+#     runtime: nvidia
+#     environment:
+#       - NVIDIA_VISIBLE_DEVICES=all
+#     deploy:
+#       resources:
+#         reservations:
+#           devices:
+#             - driver: nvidia
+#               count: 1
+#               capabilities: [gpu]
+
+# Para desenvolvimento com hot reload:
+# Substitua o 'build' por:
+#     image: web_image_processor
+#     volumes:
+#       - .:/app
+#     environment:
+#       - FLASK_DEBUG=true

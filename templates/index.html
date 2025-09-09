@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de Imagens OpenCV</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <i class="fas fa-image header-icon"></i>
+                <h1>Processador de Imagens OpenCV</h1>
+                <p class="subtitle">Aplique filtros avançados de processamento de imagem usando algoritmos de visão computacional</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Filter Selection Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-filter"></i>
+                    <h2>Seleção de Filtro</h2>
+                </div>
+                <div class="card-content">
+                    <form id="filterForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="filterType" class="form-label">
+                                <i class="fas fa-cogs"></i>
+                                Tipo de Filtro
+                            </label>
+                            <select id="filterType" name="filterType" class="form-select" required>
+                                <option value="">Selecione um filtro de processamento</option>
+                                <optgroup label="Detecção de Bordas">
+                                    <option value="canny">Canny Edge Detection</option>
+                                    <option value="sobel">Sobel Edge Detection</option>
+                                </optgroup>
+                                <optgroup label="Segmentação">
+                                    <option value="adaptative">Segmentação Adaptativa</option>
+                                    <option value="manualSegmentation">Segmentação Manual</option>
+                                    <option value="otsu">Limiarização Otsu</option>
+                                </optgroup>
+                                <optgroup label="Filtros de Suavização">
+                                    <option value="gaussian">Filtro Gaussiano</option>
+                                    <option value="mediam">Filtro de Média</option>
+                                </optgroup>
+                                <optgroup label="Análise e Melhoria">
+                                    <option value="equalize">Equalização de Histograma</option>
+                                    <option value="histogram">Análise de Histograma</option>
+                                    <option value="cannyEdge">Contagem de Objetos</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- Dynamic Filter Parameters -->
+                        <div id="filterFields" class="filter-parameters"></div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn-submit" id="processBtn" disabled>
+                            <i class="fas fa-play"></i>
+                            Processar Imagem
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="progressContainer" class="progress-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text">Processando imagem...</p>
+            </div>
+
+            <!-- Results Card -->
+            <div id="resultCard" class="card result-card" style="display: none;">
+                <div class="card-header">
+                    <i class="fas fa-image"></i>
+                    <h2>Resultado do Processamento</h2>
+                </div>
+                <div class="card-content">
+                    <div class="result-info" id="resultInfo"></div>
+                    <div class="image-container">
+                        <img id="processedImage" src="" alt="Imagem Processada" style="display:none;">
+                    </div>
+                    <div class="result-actions">
+                        <button onclick="downloadImage()" class="btn-download">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </button>
+                        <button onclick="resetForm()" class="btn-reset">
+                            <i class="fas fa-refresh"></i>
+                            Novo Processamento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 Processador de Imagens OpenCV - Desenvolvido para análise científica de imagens</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <!-- JavaScript -->
+    <script>
+        // Configurações globais
+        let currentImageUrl = '';
+        
+        // Definições dos filtros com explicações detalhadas
+        const filterDefinitions = {
+            'adaptative': {
+                title: 'Segmentação Adaptativa',
+                description: 'A segmentação adaptativa calcula automaticamente o limiar para cada região da imagem baseado nos pixels vizinhos. Ideal para imagens com iluminação variável.',
+                icon: 'fas fa-adjust',
+                parameters: [
+                    {
+                        id: 'adaptativeFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff'
+                    },
+                    {
+                        id: 'adaptativeMediana',
+                        name: 'mediana',
+                        type: 'number',
+                        label: 'Tamanho do Kernel (Filtro Mediano)',
+                        required: true,
+                        min: 3,
+                        max: 15,
+                        step: 2,
+                        value: 5,
+                        help: 'Deve ser um número ímpar. Valores maiores reduzem mais ruído.'
+                    }
+                ]
+            },
+            'canny': {
+                title: 'Detecção de Bordas Canny',
+                description: 'O algoritmo Canny é considerado o melhor detector de bordas. Utiliza gradientes e supressão de não-máximos para detectar bordas precisas.',
+                icon: 'fas fa-vector-square',
+                parameters: [
+                    {
+                        id: 'cannyFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff'
+                    },
+                    {
+                        id: 'cannyMediana',
+                        name: 'mediana',
+                        type: 'number',
+                        label: 'Tamanho do Kernel Gaussiano',
+                        required: true,
+                        min: 3,
+                        max: 15,
+                        step: 2,
+                        value: 5,
+                        help: 'Suavização antes da detecção. Valores maiores detectam bordas mais grossas.'
+                    },
+                    {
+                        id: 'canny1',
+                        name: 'canny1',
+                        type: 'number',
+                        label: 'Limiar Inferior',
+                        required: true,
+                        min: 0,
+                        max: 255,
+                        value: 50,
+                        help: 'Bordas fracas abaixo deste valor são descartadas.'
+                    },
+                    {
+                        id: 'canny2',
+                        name: 'canny2',
+                        type: 'number',
+                        label: 'Limiar Superior',
+                        required: true,
+                        min: 0,
+                        max: 255,
+                        value: 150,
+                        help: 'Bordas fortes acima deste valor são mantidas.'
+                    }
+                ]
+            },
+            'cannyEdge': {
+                title: 'Contagem de Objetos',
+                description: 'Detecta e conta objetos na imagem usando limiarização e análise de contornos. Útil para análise quantitativa.',
+                icon: 'fas fa-calculator',
+                parameters: [
+                    {
+                        id: 'cannyEdgeFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff',
+                        help: 'Funciona melhor com objetos bem contrastados e separados.'
+                    }
+                ]
+            },
+            'equalize': {
+                title: 'Equalização de Histograma',
+                description: 'Melhora o contraste da imagem redistribuindo os valores de intensidade para usar toda a faixa disponível.',
+                icon: 'fas fa-chart-bar',
+                parameters: [
+                    {
+                        id: 'equalizeFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff',
+                        help: 'Preserva as cores originais equalizando apenas a luminância.'
+                    }
+                ]
+            },
+            'gaussian': {
+                title: 'Filtro Gaussiano',
+                description: 'Aplica suavização usando a função Gaussiana para reduzir ruído preservando bordas melhor que outros filtros.',
+                icon: 'fas fa-blur',
+                parameters: [
+                    {
+                        id: 'gaussianFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff'
+                    },
+                    {
+                        id: 'gaussianSigma',
+                        name: 'sigma',
+                        type: 'number',
+                        label: 'Sigma (Desvio Padrão)',
+                        required: true,
+                        min: 1,
+                        max: 10,
+                        value: 2,
+                        step: 0.5,
+                        help: 'Controla a intensidade da suavização. Valores maiores = mais suave.'
+                    },
+                    {
+                        id: 'gaussianKSize',
+                        name: 'ksize',
+                        type: 'number',
+                        label: 'Tamanho do Kernel',
+                        required: true,
+                        min: 3,
+                        max: 31,
+                        step: 2,
+                        value: 7,
+                        help: 'Tamanho da matriz de convolução (deve ser ímpar).'
+                    }
+                ]
+            },
+            'histogram': {
+                title: 'Análise de Histograma',
+                description: 'Gera um gráfico mostrando a distribuição de intensidades dos pixels na imagem.',
+                icon: 'fas fa-chart-line',
+                parameters: [
+                    {
+                        id: 'histogramFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff',
+                        help: 'O histograma ajuda a entender o contraste e brilho da imagem.'
+                    }
+                ]
+            },
+            'manualSegmentation': {
+                title: 'Segmentação Manual',
+                description: 'Permite controle manual dos valores de limiarização para segmentar objetos específicos.',
+                icon: 'fas fa-sliders-h',
+                parameters: [
+                    {
+                        id: 'manualSegmentationFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff'
+                    },
+                    {
+                        id: 'manualSegmentationMediana',
+                        name: 'mediana',
+                        type: 'number',
+                        label: 'Filtro Mediano',
+                        required: true,
+                        min: 3,
+                        max: 15,
+                        step: 2,
+                        value: 5,
+                        help: 'Reduz ruído antes da segmentação.'
+                    },
+                    {
+                        id: 'manualSegmentationThreshold1Number',
+                        name: 'threshold1Number',
+                        type: 'number',
+                        label: 'Limiar Inferior',
+                        required: true,
+                        min: 0,
+                        max: 255,
+                        value: 100,
+                        help: 'Pixels abaixo deste valor se tornam pretos.'
+                    },
+                    {
+                        id: 'manualSegmentationThreshold2Number',
+                        name: 'threshold2Number',
+                        type: 'number',
+                        label: 'Limiar Superior (Valor de Saída)',
+                        required: true,
+                        min: 0,
+                        max: 255,
+                        value: 255,
+                        help: 'Valor atribuído aos pixels acima do limiar inferior.'
+                    }
+                ]
+            },
+            'mediam': {
+                title: 'Filtro de Média',
+                description: 'Suaviza a imagem calculando a média dos pixels vizinhos. Simples e eficaz para redução de ruído.',
+                icon: 'fas fa-equals',
+                parameters: [
+                    {
+                        id: 'mediamFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff'
+                    },
+                    {
+                        id: 'manualSegmentationMediana',
+                        name: 'mediana',
+                        type: 'number',
+                        label: 'Tamanho do Kernel',
+                        required: true,
+                        min: 3,
+                        max: 31,
+                        value: 5,
+                        help: 'Área quadrada usada para calcular a média.'
+                    }
+                ]
+            },
+            'otsu': {
+                title: 'Limiarização Otsu',
+                description: 'Calcula automaticamente o melhor valor de limiar minimizando a variância intra-classe.',
+                icon: 'fas fa-magic',
+                parameters: [
+                    {
+                        id: 'otsuFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff',
+                        help: 'Funciona melhor com imagens que têm dois picos distintos no histograma.'
+                    }
+                ]
+            },
+            'sobel': {
+                title: 'Detecção de Bordas Sobel',
+                description: 'Detecta bordas calculando o gradiente da imagem usando operadores Sobel para as direções X e Y.',
+                icon: 'fas fa-crosshairs',
+                parameters: [
+                    {
+                        id: 'sobelFile',
+                        name: 'file',
+                        type: 'file',
+                        label: 'Arquivo de Imagem',
+                        required: true,
+                        accept: '.jpg,.jpeg,.png,.bmp,.tiff'
+                    },
+                    {
+                        id: 'sobelDx',
+                        name: 'dx',
+                        type: 'number',
+                        label: 'Ordem da Derivada em X',
+                        required: true,
+                        min: 0,
+                        max: 2,
+                        value: 1,
+                        help: '1 para detectar bordas verticais, 0 para ignorar.'
+                    },
+                    {
+                        id: 'sobelDy',
+                        name: 'dy',
+                        type: 'number',
+                        label: 'Ordem da Derivada em Y',
+                        required: true,
+                        min: 0,
+                        max: 2,
+                        value: 1,
+                        help: '1 para detectar bordas horizontais, 0 para ignorar.'
+                    },
+                    {
+                        id: 'sobelKSize',
+                        name: 'ksize',
+                        type: 'number',
+                        label: 'Tamanho do Kernel',
+                        required: true,
+                        min: 1,
+                        max: 7,
+                        step: 2,
+                        value: 3,
+                        help: 'Tamanho do operador Sobel (1, 3, 5 ou 7).'
+                    }
+                ]
+            }
+        };
+
+        // Event listeners
+        document.getElementById('filterType').addEventListener('change', function(event) {
+            const filterType = event.target.value;
+            const filterFields = document.getElementById('filterFields');
+            const processBtn = document.getElementById('processBtn');
+            
+            filterFields.innerHTML = '';
+            
+            if (filterType && filterDefinitions[filterType]) {
+                const filter = filterDefinitions[filterType];
+                
+                // Criar seção de explicação
+                const explanationHTML = `
+                    <div class="filter-explanation">
+                        <div class="filter-header">
+                            <i class="${filter.icon}"></i>
+                            <h3>${filter.title}</h3>
+                        </div>
+                        <p class="filter-description">${filter.description}</p>
+                    </div>
+                `;
+                
+                // Criar campos de parâmetros
+                let parametersHTML = '<div class="parameters-section">';
+                filter.parameters.forEach(param => {
+                    parametersHTML += `
+                        <div class="form-group">
+                            <label for="${param.id}" class="form-label">
+                                ${param.label}${param.required ? ' <span class="required">*</span>' : ''}
+                            </label>
+                            <input 
+                                type="${param.type}" 
+                                id="${param.id}" 
+                                name="${param.name}" 
+                                class="form-input"
+                                ${param.required ? 'required' : ''}
+                                ${param.min !== undefined ? `min="${param.min}"` : ''}
+                                ${param.max !== undefined ? `max="${param.max}"` : ''}
+                                ${param.step !== undefined ? `step="${param.step}"` : ''}
+                                ${param.value !== undefined ? `value="${param.value}"` : ''}
+                                ${param.accept ? `accept="${param.accept}"` : ''}
+                            />
+                            ${param.help ? `<small class="help-text">${param.help}</small>` : ''}
+                        </div>
+                    `;
+                });
+                parametersHTML += '</div>';
+                
+                filterFields.innerHTML = explanationHTML + parametersHTML;
+                processBtn.disabled = false;
+            } else {
+                processBtn.disabled = true;
+            }
+        });
+
+        // Função para processar o formulário
+        document.getElementById('filterForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const filterType = document.getElementById('filterType').value;
+            
+            if (!filterType) {
+                showNotification('Por favor, selecione um tipo de filtro.', 'error');
+                return;
+            }
+            
+            // Mapear tipos de filtro para endpoints
+            const endpointMap = {
+                'adaptative': '/adaptativeSegmentation',
+                'canny': '/canny',
+                'cannyEdge': '/cannyEdge',
+                'equalize': '/equalize',
+                'gaussian': '/gaussian',
+                'histogram': '/histogram',
+                'manualSegmentation': '/manualSegmentation',
+                'mediam': '/mediam',
+                'otsu': '/otsu',
+                'sobel': '/sobel'
+            };
+            
+            const url = endpointMap[filterType];
+            if (!url) {
+                showNotification('Tipo de filtro inválido.', 'error');
+                return;
+            }
+            
+            // Mostrar barra de progresso
+            showProgress();
+            
+            // Fazer requisição
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                
+                if (data.success) {
+                    showResult(data, filterDefinitions[filterType].title);
+                    showNotification('Imagem processada com sucesso!', 'success');
+                } else {
+                    showNotification(`Erro: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                console.error('Erro:', error);
+                showNotification('Erro ao processar imagem. Tente novamente.', 'error');
+            });
+        });
+
+        // Funções auxiliares
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                document.getElementById('progressFill').style.width = progress + '%';
+                if (progress >= 90) {
+                    clearInterval(interval);
+                }
+            }, 200);
+        }
+
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+
+        function showResult(data, filterName) {
+            const resultCard = document.getElementById('resultCard');
+            const resultInfo = document.getElementById('resultInfo');
+            const processedImage = document.getElementById('processedImage');
+            
+            currentImageUrl = data.image_url;
+            
+            resultInfo.innerHTML = `
+                <div class="result-success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Processamento Concluído:</strong> ${filterName}
+                </div>
+                <div class="result-details">
+                    <p><strong>Arquivo processado:</strong> ${data.output_path.split('/').pop()}</p>
+                    <p><strong>Localização:</strong> ${data.output_path}</p>
+                </div>
+            `;
+            
+            processedImage.src = data.image_url;
+            processedImage.style.display = 'block';
+            resultCard.style.display = 'block';
+            
+            // Scroll para o resultado
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function downloadImage() {
+            if (currentImageUrl) {
+                const link = document.createElement('a');
+                link.href = currentImageUrl;
+                link.download = 'imagem_processada.jpg';
+                link.click();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('filterForm').reset();
+            document.getElementById('filterFields').innerHTML = '';
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('processBtn').disabled = true;
+            currentImageUrl = '';
+            
+            // Scroll para o topo
+            document.querySelector('.header').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
