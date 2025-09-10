@@ -332,22 +332,5 @@ docker-compose logs web_image_processor
 | Otsu | ~30ms | ~15MB |
 | Histogram | ~100ms | ~30MB |
 
-*Testado em: CPU Intel i5, 8GB RAM*
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 👥 Autores
-
-- **mferraz56** - *Trabalho inicial* - [mferraz56](https://github.com/mferraz56)
-
-## 🙏 Agradecimentos
-
-- OpenCV community
-- Flask contributors
-- Todos os contribuidores do projeto
-
 ---
 
-**Desenvolvido com ❤️ para análise científica de imagens**
